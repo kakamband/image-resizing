@@ -1,13 +1,22 @@
 const ImageComponents = require('./src/imageComponents')
+import Toucan from "toucan-js";
 
 addEventListener('fetch', (event) => {
+
+  const sentry = new Toucan({
+    dsn: DSN_KEY,
+    event,
+    allowedHeaders: ["user-agent"],
+    allowedSearchParams: /(.*)/,
+  });
+
   event.passThroughOnException()
   /* Get the origin image if the request is from the resizer worker itself */
   if (/image-resizing/.test(event.request.headers.get('via'))) {
     return fetch(event.request)
   }
 
-  event.respondWith(handleRequest(event.request))
+  event.respondWith(handleRequest(event.request, sentry))
 })
 
 function populateResizeOptions(imgComponents, request) {
@@ -37,20 +46,25 @@ function populateResizeOptions(imgComponents, request) {
   return options
 }
 
-async function handleRequest(request) {
-  const imgComponents = new ImageComponents(request.url)
-  const options = populateResizeOptions(imgComponents, request)
+async function handleRequest(request, sentry) {
+  try {
+    const imgComponents = new ImageComponents(request.url)
+    const options = populateResizeOptions(imgComponents, request)
 
-  const imageRequest = new Request(imgComponents.getUnsizedUrl(), {
-    headers: request.headers,
-  })
+    const imageRequest = new Request(imgComponents.getUnsizedUrl(), {
+      headers: request.headers,
+    })
 
-  const response = await fetch(imageRequest, options)
+    const response = await fetch(imageRequest, options)
 
-  if (response.ok) {
-    return response
-  } else {
-    // Use original image
+    if (response.ok) {
+      return response
+    } else {
+      // Use original image
+      return response.redirect(imgComponents.getInputUrl(), 307)
+    }
+  } catch (err) {
+    sentry.captureException(err);
     return response.redirect(imgComponents.getInputUrl(), 307)
   }
 }

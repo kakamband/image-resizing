@@ -1,14 +1,14 @@
 {
   "private": true,
   "name": "image-resizing",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Image resizing via Cloudflare Worker resizing API",
   "main": "index.js",
   "scripts": {
     "test": "jest --coverage",
     "lint": "eslint --fix . && echo 'Lint complete.'"
   },
-  "jest" : {
+  "jest": {
     "collectCoverageFrom": [
       "index.js",
       "src/*.js"
@@ -26,6 +26,7 @@
     "prettier": "2.1.2"
   },
   "dependencies": {
-    "kind-of": "6.0.3"
+    "kind-of": "6.0.3",
+    "toucan-js": "2.2.0"
   }
 }
